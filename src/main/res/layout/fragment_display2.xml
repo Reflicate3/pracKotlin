@@ -1,19 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    tools:context=".DisplayFragment2"
     android:gravity="center">
 
-    <Button
-        android:id="@+id/cameraButton"
+    <TextView
+        android:id="@+id/name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Open Camera" />
+        android:text="Second output fragment"
+        android:textSize="18sp"/>
 
-    <Button
-        android:id="@+id/listButton"
+    <TextView
+        android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Open List" />
+        android:text="Data from ViewModel"
+        android:textSize="18sp"/>
 </LinearLayout>
