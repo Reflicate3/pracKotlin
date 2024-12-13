@@ -1,6 +1,5 @@
 package com.example.seventhprackotlin
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Button
@@ -8,18 +7,20 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
-import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
-    public lateinit var urlInput: EditText
-    public lateinit var downloadButton: Button
-    public lateinit var imageView: ImageView
-    public val executor = Executors.newFixedThreadPool(2)
+    private lateinit var urlInput: EditText
+    private lateinit var downloadButton: Button
+    private lateinit var imageView: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,46 +40,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    public fun downloadImage(url: String) {
-        executor.execute {
+    private fun downloadImage(url: String) {
+        lifecycleScope.launch {
             try {
-                val inputStream: InputStream = URL(url).openStream()
-                val imageBytes = inputStream.readBytes()
+                val imageBytes = withContext(Dispatchers.IO) {
+                    val inputStream: InputStream = URL(url).openStream()
+                    inputStream.readBytes()
+                }
+
 
                 val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 
-                runOnUiThread {
-                    imageView.setImageBitmap(bitmap)
-                    imageView.visibility = ImageView.VISIBLE
-                }
 
-                // Сохраняем изображение во внутреннюю директорию
-                executor.execute {
+                imageView.setImageBitmap(bitmap)
+                imageView.visibility = ImageView.VISIBLE
+
+
+                withContext(Dispatchers.IO) {
                     saveImage(imageBytes)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                runOnUiThread {
-                    Toast.makeText(this, "Ошибка загрузки изображения", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this@MainActivity, "Ошибка загрузки изображения", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    public fun saveImage(imageBytes: ByteArray, directory: File = filesDir): Boolean {
+    private suspend fun saveImage(imageBytes: ByteArray, directory: File = filesDir): Boolean {
         return try {
             val file = File(directory, "downloaded_image.jpg")
-            val fos = FileOutputStream(file)
-            fos.write(imageBytes)
-            fos.close()
-            runOnUiThread {
-                Toast.makeText(this, "Изображение сохранено", Toast.LENGTH_SHORT).show()
+            FileOutputStream(file).use { fos ->
+                fos.write(imageBytes)
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "Изображение сохранено", Toast.LENGTH_SHORT).show()
             }
             true
         } catch (e: Exception) {
             e.printStackTrace()
-            runOnUiThread {
-                Toast.makeText(this, "Ошибка сохранения изображения", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "Ошибка сохранения изображения", Toast.LENGTH_SHORT).show()
             }
             false
         }
